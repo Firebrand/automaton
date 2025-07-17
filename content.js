@@ -41,13 +41,13 @@ async function executePlaybook(playbook) {
     const action = sortedActions[i];
     
     // Calculate delay based on timestamp difference
-    if (previousTimestamp !== null) {
-      const delay = action.timestamp - previousTimestamp;
-      if (delay > 0) {
-        console.log(`Waiting ${delay}ms before next action...`);
-        await sleep(delay);
-      }
-    }
+    // if (previousTimestamp !== null) {
+    //   const delay = action.timestamp - previousTimestamp;
+    //   if (delay > 0) {
+    //     console.log(`Waiting ${delay}ms before next action...`);
+    //     await sleep(delay);
+    //   }
+    // }
     
     // Execute the current action
     console.log(`Executing action ${i + 1}/${sortedActions.length}:`, action);
@@ -98,7 +98,7 @@ async function executeAction(action) {
   }
   
   // Small delay after each action to allow page to respond
-  await sleep(50);
+  await sleep(200);
 }
 
 /**
