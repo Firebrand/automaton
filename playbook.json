@@ -30,6 +30,27 @@
       "timestamp": 1752716439763,
       "type": "input",
       "value": "There"
+    },
+    {
+      "inputType": "button",
+      "selector": "button.dropbutton__toggle",
+      "timestamp": 1752716440763,
+      "type": "click",
+      "value": ""
+    },
+    {
+      "inputType": "submit",
+      "selector": "[id^=\"paragraphs-0-subform-field-subcomponent-text-add-more\"]",
+      "timestamp": 1752716441763,
+      "type": "click",
+      "value": "Add Text"
+    },
+    {
+      "inputType": "ckeditor",
+      "selector": ".ck-editor__editable",
+      "timestamp": 1752716442763,
+      "type": "ckeditor",
+      "value": "Why <strong>hello</strong> there!"
     }
   ]
 }
