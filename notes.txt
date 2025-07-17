@@ -1,0 +1,3 @@
+const editable = document.querySelector('.ck-editor__editable');
+const editor = editable.ckeditorInstance;
+editor.setData('Why <strong>hello</strong> there!');

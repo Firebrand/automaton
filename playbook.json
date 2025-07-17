@@ -48,7 +48,7 @@
     {
       "inputType": "ckeditor",
       "selector": ".ck-editor__editable",
-      "timestamp": 1752716442763,
+      "timestamp": 1752716444763,
       "type": "ckeditor",
       "value": "Why <strong>hello</strong> there!"
     }

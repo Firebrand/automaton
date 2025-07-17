@@ -89,6 +89,10 @@ async function executeAction(action) {
       await executeInputAction(element, value, inputType);
       break;
       
+    case 'ckeditor':
+      await executeCKEditorAction(element, value);
+      break;
+      
     default:
       throw new Error(`Unsupported action type: ${type}`);
   }
@@ -186,6 +190,24 @@ async function executeInputAction(element, value, inputType) {
   element.dispatchEvent(changeEvent);
   
   console.log(`Input "${value}" into element: ${element.tagName}`);
+}
+
+/**
+ * Executes a CKEditor action on an element
+ * @param {Element} element - The CKEditor editable element
+ * @param {string} value - The HTML content to set in the editor
+ * @returns {Promise} - Promise that resolves when the content is set
+ */
+async function executeCKEditorAction(element, value) {
+  // Highlight element briefly to show what's being edited
+  highlightElement(element);
+
+    chrome.runtime.sendMessage({ 
+      action: 'executeInMainWorld',
+      tabId: chrome.runtime.id // or get the actual tab ID
+  });
+  // Small delay to allow CKEditor to process the change
+  await sleep(1000);
 }
 
 /**
