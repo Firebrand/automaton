@@ -13,21 +13,21 @@
     {
       "inputType": "button",
       "selector": "button.dropbutton__toggle",
-      "timestamp": 1752716434842,
+      "timestamp": 1752716435842,
       "type": "click",
       "value": ""
     },
     {
       "inputType": "submit",
       "selector": "[id^=\"paragraphs-panel-add-more\"]",
-      "timestamp": 1752716435863,
+      "timestamp": 1752716436863,
       "type": "click",
       "value": "Add Panel"
     },
     {
       "inputType": "text",
       "selector": "[id^=\"edit-paragraphs-0-subform-field-title-0-value\"]",
-      "timestamp": 1752716436763,
+      "timestamp": 1752716439763,
       "type": "input",
       "value": "There"
     }
