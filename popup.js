@@ -11,16 +11,47 @@ const fileInput = document.getElementById('fileInput');
 const statusDiv = document.getElementById('status');
 const playbookInfo = document.getElementById('playbookInfo');
 
+// Initialize popup when it opens
+document.addEventListener('DOMContentLoaded', initializePopup);
+
 // Event listeners
 importBtn.addEventListener('click', handleImportClick);
 runBtn.addEventListener('click', handleRunClick);
 fileInput.addEventListener('change', handleFileSelect);
 
 /**
+ * Initializes the popup by restoring any previously imported playbook
+ */
+function initializePopup() {
+  // Try to restore previously imported playbook from storage
+  chrome.storage.local.get(['currentPlaybook', 'playbookLoaded'], function(result) {
+    if (result.playbookLoaded && result.currentPlaybook) {
+      playbookData = result.currentPlaybook;
+      
+      // Validate the restored playbook
+      if (validatePlaybook(playbookData)) {
+        updatePlaybookInfo(playbookData);
+        runBtn.disabled = false;
+        showStatus('Previous playbook restored', 'info');
+      } else {
+        // Clear invalid data
+        chrome.storage.local.remove(['currentPlaybook', 'playbookLoaded']);
+        playbookData = null;
+        runBtn.disabled = true;
+      }
+    }
+  });
+}
+
+/**
  * Handles the import button click by triggering file input
+ * Prevents popup from closing by managing focus properly
  */
 function handleImportClick() {
-  fileInput.click();
+  // Prevent the popup from closing by keeping focus
+  setTimeout(() => {
+    fileInput.click();
+  }, 100);
 }
 
 /**
@@ -28,6 +59,9 @@ function handleImportClick() {
  * @param {Event} event - The file input change event
  */
 function handleFileSelect(event) {
+  // Prevent event from bubbling up and potentially closing popup
+  event.stopPropagation();
+  
   const file = event.target.files[0];
   
   if (!file) {
@@ -38,8 +72,13 @@ function handleFileSelect(event) {
   // Validate file type
   if (!file.name.endsWith('.json')) {
     showStatus('Please select a JSON file', 'error');
+    // Reset file input
+    fileInput.value = '';
     return;
   }
+  
+  // Show loading state
+  showStatus('Loading playbook...', 'info');
   
   // Read and parse the file
   const reader = new FileReader();
@@ -51,13 +90,21 @@ function handleFileSelect(event) {
       // Validate playbook structure
       if (!validatePlaybook(playbookData)) {
         showStatus('Invalid playbook format', 'error');
+        playbookData = null;
+        runBtn.disabled = true;
         return;
       }
       
-      // Update UI to show successful import
-      showStatus('Playbook imported successfully!', 'success');
-      updatePlaybookInfo(playbookData);
-      runBtn.disabled = false;
+      // Store playbook in chrome storage for persistence
+      chrome.storage.local.set({ 
+        'currentPlaybook': playbookData,
+        'playbookLoaded': true 
+      }, function() {
+        // Update UI to show successful import
+        showStatus('Playbook imported successfully!', 'success');
+        updatePlaybookInfo(playbookData);
+        runBtn.disabled = false;
+      });
       
     } catch (error) {
       showStatus('Error parsing JSON file: ' + error.message, 'error');
@@ -68,6 +115,8 @@ function handleFileSelect(event) {
   
   reader.onerror = function() {
     showStatus('Error reading file', 'error');
+    playbookData = null;
+    runBtn.disabled = true;
   };
   
   reader.readAsText(file);

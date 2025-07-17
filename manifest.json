@@ -5,7 +5,8 @@
   "description": "Chrome extension to import and run playbook actions on web pages",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html",
