@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "created": "2025-07-17T01:42:00.610Z",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+  "actions": [
+    {
+      "inputType": "text",
+      "selector": "[id^=\"edit-label-0-value\"]",
+      "timestamp": 1752716434723,
+      "type": "input",
+      "value": "Hello"
+    },
+    {
+      "inputType": "button",
+      "selector": "button.dropbutton__toggle",
+      "timestamp": 1752716434842,
+      "type": "click",
+      "value": ""
+    },
+    {
+      "inputType": "submit",
+      "selector": "[id^=\"paragraphs-panel-add-more\"]",
+      "timestamp": 1752716435863,
+      "type": "click",
+      "value": "Add Panel"
+    },
+    {
+      "inputType": "text",
+      "selector": "[id^=\"edit-paragraphs-0-subform-field-title-0-value\"]",
+      "timestamp": 1752716436763,
+      "type": "input",
+      "value": "There"
+    }
+  ]
+}
