@@ -115,7 +115,7 @@ async function executeAction(action) {
   }
   
   // Small delay after each action to allow page to respond
-  await sleep(200);
+  await sleep(600);
 }
 
 /**
@@ -317,13 +317,20 @@ function handleRecordedClick(event) {
   if (!isRecording) return;
   
   const element = event.target;
-  const selector = generateSelector(element);
+  const elementType = element.type?.toLowerCase() || '';
+  const validTypes = ['text', 'textarea', 'button', 'checkbox', 'submit'];
   
+  // Only proceed if element has no type (like a button) or has a valid type
+  if (elementType && !validTypes.includes(elementType)) {
+    return;
+  }
+  
+  const selector = generateSelector(element);
   if (!selector) return;
   
   // Determine input type based on element
   let inputType = 'button';
-  if (element.type === 'submit' || element.getAttribute('type') === 'submit') {
+  if (elementType === 'submit' || element.getAttribute('type') === 'submit') {
     inputType = 'submit';
   } else if (element.tagName === 'BUTTON') {
     inputType = 'button';
@@ -526,9 +533,17 @@ function handleCKEditorInput(event) {
 function generateSelector(element) {
   if (!element || element === document) return null;
   
-  // Try ID first
+  // Try ID first, but handle randomized suffixes after double dashes
   if (element.id) {
-    return `#${element.id}`;
+    // Check if ID has randomized suffix after double dashes
+    if (element.id.includes('--')) {
+      const stableId = element.id.split('--')[0];
+      // Use partial ID matching for the stable part
+      const selector = `[id^="${stableId}--"]`;
+      return selector;
+    } else {
+      return `#${element.id}`;
+    }
   }
   
   // Try unique attributes that might be useful
@@ -558,8 +573,8 @@ function generateSelector(element) {
     }
   }
   
-  // Try to use partial ID matching for dynamic IDs
-  if (element.id && element.id.includes('-')) {
+  // Try to use partial ID matching for dynamic IDs (but skip if already handled double dashes above)
+  if (element.id && element.id.includes('-') && !element.id.includes('--')) {
     const idParts = element.id.split('-');
     for (let i = 0; i < idParts.length; i++) {
       const partialId = idParts.slice(0, i + 1).join('-');

@@ -4,63 +4,63 @@
   "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
   "actions": [
     {
-      "inputType": "text",
+      "elementType": "text",
       "selector": "[id^=\"edit-label-0-value\"]",
       "timestamp": 1752716434723,
       "type": "input",
       "value": "Hello"
     },
     {
-      "inputType": "button",
+      "elementType": "button",
       "selector": "button.dropbutton__toggle",
       "timestamp": 1752716435842,
       "type": "click",
       "value": ""
     },
     {
-      "inputType": "submit",
+      "elementType": "submit",
       "selector": "[id^=\"paragraphs-panel-add-more\"]",
       "timestamp": 1752716436863,
       "type": "click",
       "value": "Add Panel"
     },
     {
-      "inputType": "text",
+      "elementType": "text",
       "selector": "[id^=\"edit-paragraphs-0-subform-field-title-0-value\"]",
       "timestamp": 1752716439763,
       "type": "input",
       "value": "There"
     },
     {
-      "inputType": "button",
+      "elementType": "button",
       "selector": "button.dropbutton__toggle",
       "timestamp": 1752716440763,
       "type": "click",
       "value": ""
     },
     {
-      "inputType": "submit",
+      "elementType": "submit",
       "selector": "[id^=\"paragraphs-0-subform-field-subcomponent-text-add-more\"]",
       "timestamp": 1752716441763,
       "type": "click",
       "value": "Add Text"
     },
     {
-      "inputType": "ckeditor",
+      "elementType": "ckeditor",
       "selector": ".ck-editor__editable",
       "timestamp": 1752716444763,
       "type": "ckeditor",
       "value": "Why <strong>this is crazy</strong> there!"
     },
     {
-      "inputType": "button",
+      "elementType": "button",
       "selector": "button.dropbutton__toggle",
       "timestamp": 1752716445763,
       "type": "click",
       "value": ""
     },
     {
-      "inputType": "submit",
+      "elementType": "submit",
       "selector": "[id^=\"paragraphs-0-subform-field-subcomponent-media-add-more\"]",
       "timestamp": 1752716446763,
       "type": "click",
