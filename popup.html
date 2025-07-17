@@ -1,69 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Playbook Runner</title>
+  <meta charset="utf-8">
   <style>
     body {
-      width: 200px;
-      padding: 15px;
+      width: 300px;
+      padding: 20px;
       font-family: Arial, sans-serif;
     }
+    
     .container {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 15px;
     }
-    button {
-      padding: 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+    
+    .title {
+      font-size: 18px;
       font-weight: bold;
-      transition: background-color 0.2s;
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
     }
-    #importBtn {
-      background-color: #4285f4;
+    
+    .button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    
+    .import-btn {
+      background-color: #4CAF50;
       color: white;
     }
-    #importBtn:hover {
-      background-color: #3367d6;
+    
+    .import-btn:hover {
+      background-color: #45a049;
     }
-    #runBtn {
-      background-color: #0f9d58;
+    
+    .run-btn {
+      background-color: #2196F3;
       color: white;
     }
-    #runBtn:disabled {
+    
+    .run-btn:hover {
+      background-color: #1976D2;
+    }
+    
+    .run-btn:disabled {
       background-color: #cccccc;
       cursor: not-allowed;
     }
-    #status {
+    
+    .status {
+      font-size: 12px;
+      text-align: center;
       margin-top: 10px;
+      padding: 8px;
+      border-radius: 3px;
+    }
+    
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    .file-input {
+      display: none;
+    }
+    
+    .playbook-info {
       font-size: 12px;
       color: #666;
-      min-height: 14px;
-    }
-    .file-info {
-      margin: 10px 0;
-      padding: 8px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-      font-size: 12px;
-      word-break: break-all;
+      text-align: center;
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <input type="file" id="fileInput" accept=".json" style="display: none;">
-    <button id="importBtn">Import Playbook</button>
-    <div id="fileInfo" class="file-info" style="display: none;">
-      <div>Loaded: <span id="fileName"></span></div>
-      <div>Actions: <span id="actionCount">0</span></div>
-    </div>
-    <button id="runBtn" disabled>Run Playbook</button>
-    <div id="status"></div>
+    <div class="title">Automaton Playbook Runner</div>
+    
+    <!-- Hidden file input for importing playbook -->
+    <input type="file" id="fileInput" class="file-input" accept=".json" />
+    
+    <!-- Import button to trigger file selection -->
+    <button id="importBtn" class="button import-btn">Import Playbook</button>
+    
+    <!-- Run button to execute the imported playbook -->
+    <button id="runBtn" class="button run-btn" disabled>Run Playbook</button>
+    
+    <!-- Status display area -->
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <!-- Playbook information display -->
+    <div id="playbookInfo" class="playbook-info" style="display: none;"></div>
   </div>
+  
   <script src="popup.js"></script>
 </body>
 </html>

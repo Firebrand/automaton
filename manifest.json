@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Playbook Runner",
+  "name": "Automaton - Playbook Runner",
   "version": "1.0",
-  "description": "Run automated actions from a playbook on web pages",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "description": "Chrome extension to import and run playbook actions on web pages",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon.png"
-  },
-  "background": {
-    "service_worker": "background.js"
+    "default_title": "Automaton Playbook Runner"
   },
   "content_scripts": [
     {
@@ -17,10 +17,7 @@
       "js": ["content.js"]
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["images/*.png"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  "icons": {
+    "16": "icon.png"
+  }
 }

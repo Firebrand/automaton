@@ -1,191 +1,219 @@
-// Listen for messages from the popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'RUN_PLAYBOOK') {
-    runPlaybook(request.playbook)
+// Content script for Automaton Chrome Extension
+// Handles execution of playbook actions on web pages
+
+// Listen for messages from the popup script
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === 'executePlaybook') {
+    executePlaybook(request.playbook)
       .then(() => {
         sendResponse({ success: true });
       })
-      .catch(error => {
-        console.error('Error running playbook:', error);
+      .catch((error) => {
+        console.error('Playbook execution error:', error);
         sendResponse({ success: false, error: error.message });
       });
-    return true; // Required for async response
+    
+    // Return true to indicate we will send a response asynchronously
+    return true;
   }
 });
 
 /**
- * Executes a series of actions from a playbook with proper timing between actions
+ * Executes a playbook by running each action in sequence with proper timing
  * @param {Object} playbook - The playbook object containing actions to execute
+ * @returns {Promise} - Promise that resolves when all actions are completed
  */
-async function runPlaybook(playbook) {
-  const { actions } = playbook;
-  if (!actions || !Array.isArray(actions) || actions.length === 0) {
+async function executePlaybook(playbook) {
+  console.log('Starting playbook execution:', playbook);
+  
+  const actions = playbook.actions;
+  if (!actions || actions.length === 0) {
     throw new Error('No actions found in playbook');
   }
-
-  // Sort actions by timestamp to ensure correct order
+  
+  // Sort actions by timestamp to ensure proper order
   const sortedActions = [...actions].sort((a, b) => a.timestamp - b.timestamp);
   
-  // Notify the popup of the total number of actions
-  chrome.runtime.sendMessage({
-    type: 'PLAYBOOK_STARTED',
-    total: sortedActions.length
-  });
-
-  // Execute each action with the correct timing
-  let lastTimestamp = sortedActions[0].timestamp;
+  let previousTimestamp = null;
   
+  // Execute each action in sequence
   for (let i = 0; i < sortedActions.length; i++) {
     const action = sortedActions[i];
-    const delay = i === 0 ? 0 : action.timestamp - lastTimestamp;
     
-    // Wait for the specified delay
-    if (delay > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay));
+    // Calculate delay based on timestamp difference
+    if (previousTimestamp !== null) {
+      const delay = action.timestamp - previousTimestamp;
+      if (delay > 0) {
+        console.log(`Waiting ${delay}ms before next action...`);
+        await sleep(delay);
+      }
     }
     
-    // Execute the action
-    try {
-      await executeAction(action);
-      
-      // Notify the popup that an action was completed
-      chrome.runtime.sendMessage({
-        type: 'ACTION_COMPLETED',
-        index: i,
-        total: sortedActions.length
-      });
-      
-    } catch (error) {
-      console.error(`Error executing action ${i}:`, action, error);
-      
-      // Notify the popup of the error
-      chrome.runtime.sendMessage({
-        type: 'PLAYBOOK_ERROR',
-        error: `Action ${i + 1} failed: ${error.message}`
-      });
-      
-      throw error; // Stop execution on error
-    }
+    // Execute the current action
+    console.log(`Executing action ${i + 1}/${sortedActions.length}:`, action);
+    await executeAction(action);
     
-    lastTimestamp = action.timestamp;
+    previousTimestamp = action.timestamp;
   }
   
-  // Notify the popup that all actions are complete
-  chrome.runtime.sendMessage({
-    type: 'PLAYBOOK_COMPLETE',
-    total: sortedActions.length
-  });
+  console.log('Playbook execution completed successfully');
 }
 
 /**
- * Executes a single action on the page
- * @param {Object} action - The action to execute
+ * Executes a single action on the current page
+ * @param {Object} action - The action object containing type, selector, and value
+ * @returns {Promise} - Promise that resolves when the action is completed
  */
 async function executeAction(action) {
   const { type, selector, value, inputType } = action;
   
-  // Find the target element
+  // Find the target element using the selector
   const element = document.querySelector(selector);
   if (!element) {
-    throw new Error(`Element not found: ${selector}`);
+    throw new Error(`Element not found for selector: ${selector}`);
   }
   
-  // Scroll the element into view
+  // Scroll element into view to ensure it's visible
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   
-  // Execute the appropriate action type
-  switch (type.toLowerCase()) {
+  // Wait a bit for scrolling to complete
+  await sleep(100);
+  
+  // Execute the action based on its type
+  switch (type) {
     case 'click':
-      await clickElement(element);
+      await executeClickAction(element, action);
       break;
       
     case 'input':
-      await inputValue(element, value, inputType);
+      await executeInputAction(element, value, inputType);
       break;
       
     default:
       throw new Error(`Unsupported action type: ${type}`);
   }
   
-  // Add a small delay after each action to allow the page to update
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // Small delay after each action to allow page to respond
+  await sleep(50);
 }
 
 /**
- * Simulates a click on an element
- * @param {HTMLElement} element - The element to click
+ * Executes a click action on an element
+ * @param {Element} element - The DOM element to click
+ * @param {Object} action - The action object with additional details
+ * @returns {Promise} - Promise that resolves when click is completed
  */
-async function clickElement(element) {
-  // Focus the element first
-  element.focus();
+async function executeClickAction(element, action) {
+  // Ensure element is enabled and visible
+  if (element.disabled) {
+    throw new Error(`Cannot click disabled element: ${action.selector}`);
+  }
   
-  // Create and dispatch mouse events to simulate a real click
+  // Highlight element briefly to show what's being clicked
+  highlightElement(element);
+  
+  // Create and dispatch click events
   const mouseDownEvent = new MouseEvent('mousedown', {
-    view: window,
     bubbles: true,
-    cancelable: true
+    cancelable: true,
+    view: window
   });
   
   const mouseUpEvent = new MouseEvent('mouseup', {
-    view: window,
     bubbles: true,
-    cancelable: true
+    cancelable: true,
+    view: window
   });
   
   const clickEvent = new MouseEvent('click', {
-    view: window,
     bubbles: true,
-    cancelable: true
+    cancelable: true,
+    view: window
   });
   
+  // Dispatch events in proper sequence
   element.dispatchEvent(mouseDownEvent);
+  await sleep(10);
   element.dispatchEvent(mouseUpEvent);
+  await sleep(10);
   element.dispatchEvent(clickEvent);
   
-  // If it's a form element, also trigger a change event
-  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
-    const changeEvent = new Event('change', {
-      bubbles: true,
-      cancelable: true
-    });
-    element.dispatchEvent(changeEvent);
-  }
+  console.log(`Clicked element: ${action.selector}`);
 }
 
 /**
- * Sets a value on an input element
- * @param {HTMLElement} element - The input element
- * @param {string} value - The value to set
- * @param {string} inputType - The type of input (text, button, etc.)
+ * Executes an input action on an element
+ * @param {Element} element - The DOM element to input text into
+ * @param {string} value - The text value to input
+ * @param {string} inputType - The type of input (text, etc.)
+ * @returns {Promise} - Promise that resolves when input is completed
  */
-async function inputValue(element, value, inputType) {
-  if (!element) {
-    throw new Error('Element not found');
-  }
-  
-  // Focus the element
+async function executeInputAction(element, value, inputType) {
+  // Focus the element first
   element.focus();
   
-  // Set the value directly
-  element.value = value;
+  // Highlight element briefly to show what's being typed into
+  highlightElement(element);
   
-  // Trigger input and change events to simulate real user input
-  const inputEvent = new Event('input', {
-    bubbles: true,
-    cancelable: true
-  });
+  // Clear existing value
+  element.value = '';
   
+  // Dispatch input events for each character to simulate typing
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    
+    // Add character to element value
+    element.value += char;
+    
+    // Create and dispatch input event
+    const inputEvent = new Event('input', {
+      bubbles: true,
+      cancelable: true
+    });
+    
+    element.dispatchEvent(inputEvent);
+    
+    // Small delay between characters to simulate human typing
+    await sleep(50);
+  }
+  
+  // Dispatch change event after all input is complete
   const changeEvent = new Event('change', {
     bubbles: true,
     cancelable: true
   });
   
-  element.dispatchEvent(inputEvent);
   element.dispatchEvent(changeEvent);
   
-  // For contenteditable elements
-  if (element.isContentEditable) {
-    element.textContent = value;
-    element.dispatchEvent(inputEvent);
-  }
+  console.log(`Input "${value}" into element: ${element.tagName}`);
+}
+
+/**
+ * Highlights an element briefly to show user interaction
+ * @param {Element} element - The DOM element to highlight
+ */
+function highlightElement(element) {
+  const originalStyle = element.style.cssText;
+  
+  // Apply highlight styling
+  element.style.cssText += `
+    outline: 3px solid #ff6b6b !important;
+    outline-offset: 2px !important;
+    background-color: rgba(255, 107, 107, 0.1) !important;
+    transition: all 0.3s ease !important;
+  `;
+  
+  // Remove highlight after a short delay
+  setTimeout(() => {
+    element.style.cssText = originalStyle;
+  }, 500);
+}
+
+/**
+ * Utility function to create a delay/sleep
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise} - Promise that resolves after the specified delay
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
