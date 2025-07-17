@@ -56,6 +56,53 @@
       cursor: not-allowed;
     }
     
+    .record-btn {
+      background-color: #ff4444;
+      color: white;
+    }
+    
+    .record-btn:hover {
+      background-color: #cc3333;
+    }
+    
+    .record-btn.recording {
+      background-color: #ff6666;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    
+    .stop-btn {
+      background-color: #666666;
+      color: white;
+    }
+    
+    .stop-btn:hover {
+      background-color: #555555;
+    }
+    
+    .save-btn {
+      background-color: #ff9800;
+      color: white;
+    }
+    
+    .save-btn:hover {
+      background-color: #e68900;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .button-group .button {
+      flex: 1;
+    }
+    
     .status {
       font-size: 12px;
       text-align: center;
@@ -101,8 +148,15 @@
     <!-- Import button to trigger file selection -->
     <button id="importBtn" class="button import-btn">Import</button>
     
-    <!-- Run button to execute the imported playbook -->
-    <button id="runBtn" class="button run-btn" disabled>Run</button>
+    <!-- Recording controls -->
+    <button id="recordBtn" class="button record-btn">Record</button>
+    <button id="stopBtn" class="button stop-btn" disabled style="display: none;">Stop Recording</button>
+    
+    <!-- Action buttons for recorded/imported playbooks -->
+    <div class="button-group" id="actionButtons" style="display: none;">
+      <button id="runBtn" class="button run-btn" disabled>Run</button>
+      <button id="saveBtn" class="button save-btn" disabled>Save File</button>
+    </div>
     
     <!-- Status display area -->
     <div id="status" class="status" style="display: none;"></div>

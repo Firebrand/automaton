@@ -1,5 +1,10 @@
 // Content script for Automaton Chrome Extension
-// Handles execution of playbook actions on web pages
+// Handles execution of playbook actions on web pages and recording user interactions
+
+// Recording state
+let isRecording = false;
+let recordedActions = [];
+let recordingStartTime = null;
 
 // Listen for messages from the popup script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -14,6 +19,18 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       });
     
     // Return true to indicate we will send a response asynchronously
+    return true;
+  }
+  
+  if (request.action === 'startRecording') {
+    startRecording();
+    sendResponse({ success: true });
+    return true;
+  }
+  
+  if (request.action === 'stopRecording') {
+    const actions = stopRecording();
+    sendResponse({ success: true, actions: actions });
     return true;
   }
 });
@@ -239,4 +256,336 @@ function highlightElement(element) {
  */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Starts recording user interactions
+ */
+function startRecording() {
+  if (isRecording) {
+    return;
+  }
+  
+  isRecording = true;
+  recordedActions = [];
+  recordingStartTime = Date.now();
+  
+  console.log('Recording started');
+  
+  // Add event listeners for different types of interactions
+  document.addEventListener('click', handleRecordedClick, true);
+  document.addEventListener('input', handleRecordedInput, true);
+  document.addEventListener('change', handleRecordedChange, true);
+  
+  // Add listener for CKEditor interactions
+  observeCKEditorChanges();
+}
+
+/**
+ * Stops recording user interactions
+ * @returns {Array} - Array of recorded actions
+ */
+function stopRecording() {
+  if (!isRecording) {
+    return [];
+  }
+  
+  isRecording = false;
+  
+  console.log('Recording stopped. Captured', recordedActions.length, 'actions');
+  
+  // Remove event listeners
+  document.removeEventListener('click', handleRecordedClick, true);
+  document.removeEventListener('input', handleRecordedInput, true);
+  document.removeEventListener('change', handleRecordedChange, true);
+  
+  // Stop CKEditor observation
+  stopCKEditorObservation();
+  
+  const actions = [...recordedActions];
+  recordedActions = [];
+  recordingStartTime = null;
+  
+  return actions;
+}
+
+/**
+ * Handles recorded click events
+ * @param {Event} event - The click event
+ */
+function handleRecordedClick(event) {
+  if (!isRecording) return;
+  
+  const element = event.target;
+  const selector = generateSelector(element);
+  
+  if (!selector) return;
+  
+  // Determine input type based on element
+  let inputType = 'button';
+  if (element.type === 'submit' || element.getAttribute('type') === 'submit') {
+    inputType = 'submit';
+  } else if (element.tagName === 'BUTTON') {
+    inputType = 'button';
+  } else if (element.tagName === 'A') {
+    inputType = 'link';
+  }
+  
+  const action = {
+    inputType: inputType,
+    selector: selector,
+    timestamp: Date.now(),
+    type: 'click',
+    value: element.textContent?.trim() || element.value || ''
+  };
+  
+  recordedActions.push(action);
+  
+  // Send action to background script for persistent storage
+  chrome.runtime.sendMessage({
+    action: 'recordAction',
+    actionData: action
+  });
+  
+  console.log('Recorded click:', action);
+}
+
+/**
+ * Handles recorded input events
+ * @param {Event} event - The input event
+ */
+function handleRecordedInput(event) {
+  if (!isRecording) return;
+  
+  const element = event.target;
+  const selector = generateSelector(element);
+  
+  if (!selector) return;
+  
+  // Skip if this is a CKEditor element (handled separately)
+  if (element.classList.contains('ck-editor__editable')) {
+    return;
+  }
+  
+  // Debounce input events to avoid recording every keystroke
+  clearTimeout(element._inputTimeout);
+  element._inputTimeout = setTimeout(() => {
+    const action = {
+      inputType: element.type || 'text',
+      selector: selector,
+      timestamp: Date.now(),
+      type: 'input',
+      value: element.value || ''
+    };
+    
+    // Remove any previous input action for the same element
+    recordedActions = recordedActions.filter(a => 
+      !(a.type === 'input' && a.selector === selector)
+    );
+    
+    recordedActions.push(action);
+    
+    // Send action to background script for persistent storage
+    chrome.runtime.sendMessage({
+      action: 'recordAction',
+      actionData: action
+    });
+    
+    console.log('Recorded input:', action);
+  }, 500); // 500ms debounce
+}
+
+/**
+ * Handles recorded change events
+ * @param {Event} event - The change event
+ */
+function handleRecordedChange(event) {
+  if (!isRecording) return;
+  
+  const element = event.target;
+  
+  // Handle select elements
+  if (element.tagName === 'SELECT') {
+    const selector = generateSelector(element);
+    if (!selector) return;
+    
+    const action = {
+      inputType: 'select',
+      selector: selector,
+      timestamp: Date.now(),
+      type: 'input',
+      value: element.value
+    };
+    
+    recordedActions.push(action);
+    
+    // Send action to background script for persistent storage
+    chrome.runtime.sendMessage({
+      action: 'recordAction',
+      actionData: action
+    });
+    
+    console.log('Recorded select change:', action);
+  }
+}
+
+/**
+ * Observes CKEditor changes
+ */
+let ckEditorObserver = null;
+function observeCKEditorChanges() {
+  // Look for CKEditor instances
+  const ckEditors = document.querySelectorAll('.ck-editor__editable');
+  
+  ckEditors.forEach(editor => {
+    // Add event listener for CKEditor content changes
+    editor.addEventListener('input', handleCKEditorInput);
+  });
+  
+  // Also observe for new CKEditor instances that might be added dynamically
+  ckEditorObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const newEditors = node.querySelectorAll('.ck-editor__editable');
+          newEditors.forEach(editor => {
+            editor.addEventListener('input', handleCKEditorInput);
+          });
+        }
+      });
+    });
+  });
+  
+  ckEditorObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+/**
+ * Stops CKEditor observation
+ */
+function stopCKEditorObservation() {
+  if (ckEditorObserver) {
+    ckEditorObserver.disconnect();
+    ckEditorObserver = null;
+  }
+  
+  // Remove event listeners from CKEditor instances
+  const ckEditors = document.querySelectorAll('.ck-editor__editable');
+  ckEditors.forEach(editor => {
+    editor.removeEventListener('input', handleCKEditorInput);
+  });
+}
+
+/**
+ * Handles CKEditor input events
+ * @param {Event} event - The input event from CKEditor
+ */
+function handleCKEditorInput(event) {
+  if (!isRecording) return;
+  
+  const element = event.target;
+  const selector = generateSelector(element);
+  
+  if (!selector) return;
+  
+  // Debounce CKEditor events
+  clearTimeout(element._ckEditorTimeout);
+  element._ckEditorTimeout = setTimeout(() => {
+    const action = {
+      inputType: 'ckeditor',
+      selector: selector,
+      timestamp: Date.now(),
+      type: 'ckeditor',
+      value: element.innerHTML || ''
+    };
+    
+    // Remove any previous CKEditor action for the same element
+    recordedActions = recordedActions.filter(a => 
+      !(a.type === 'ckeditor' && a.selector === selector)
+    );
+    
+    recordedActions.push(action);
+    
+    // Send action to background script for persistent storage
+    chrome.runtime.sendMessage({
+      action: 'recordAction',
+      actionData: action
+    });
+    
+    console.log('Recorded CKEditor input:', action);
+  }, 1000); // 1s debounce for CKEditor
+}
+
+/**
+ * Generates a CSS selector for an element
+ * @param {Element} element - The DOM element
+ * @returns {string} - CSS selector string
+ */
+function generateSelector(element) {
+  if (!element || element === document) return null;
+  
+  // Try ID first
+  if (element.id) {
+    return `#${element.id}`;
+  }
+  
+  // Try unique attributes that might be useful
+  const uniqueAttrs = ['data-drupal-selector', 'name', 'class'];
+  
+  for (const attr of uniqueAttrs) {
+    const value = element.getAttribute(attr);
+    if (value) {
+      // For ID-like attributes, use them directly
+      if (attr === 'data-drupal-selector' || attr === 'name') {
+        const selector = `[${attr}="${value}"]`;
+        if (document.querySelectorAll(selector).length === 1) {
+          return selector;
+        }
+      }
+      
+      // For class, try to find a unique combination
+      if (attr === 'class') {
+        const classes = value.split(' ').filter(c => c.trim());
+        for (const cls of classes) {
+          const selector = `.${cls}`;
+          if (document.querySelectorAll(selector).length === 1) {
+            return selector;
+          }
+        }
+      }
+    }
+  }
+  
+  // Try to use partial ID matching for dynamic IDs
+  if (element.id && element.id.includes('-')) {
+    const idParts = element.id.split('-');
+    for (let i = 0; i < idParts.length; i++) {
+      const partialId = idParts.slice(0, i + 1).join('-');
+      const selector = `[id^="${partialId}"]`;
+      if (document.querySelectorAll(selector).length === 1) {
+        return selector;
+      }
+    }
+  }
+  
+  // Fallback to tag name with position
+  const tagName = element.tagName.toLowerCase();
+  const parent = element.parentElement;
+  
+  if (parent) {
+    const siblings = Array.from(parent.children).filter(child => 
+      child.tagName.toLowerCase() === tagName
+    );
+    
+    if (siblings.length === 1) {
+      return `${generateSelector(parent)} > ${tagName}`;
+    } else {
+      const index = siblings.indexOf(element);
+      return `${generateSelector(parent)} > ${tagName}:nth-child(${index + 1})`;
+    }
+  }
+  
+  return tagName;
 }
