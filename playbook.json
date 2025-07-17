@@ -50,7 +50,21 @@
       "selector": ".ck-editor__editable",
       "timestamp": 1752716444763,
       "type": "ckeditor",
-      "value": "Why <strong>hello</strong> there!"
-    }
+      "value": "Why <strong>this is crazy</strong> there!"
+    },
+    {
+      "inputType": "button",
+      "selector": "button.dropbutton__toggle",
+      "timestamp": 1752716445763,
+      "type": "click",
+      "value": ""
+    },
+    {
+      "inputType": "submit",
+      "selector": "[id^=\"paragraphs-0-subform-field-subcomponent-media-add-more\"]",
+      "timestamp": 1752716446763,
+      "type": "click",
+      "value": "Add Media"
+    },
   ]
 }

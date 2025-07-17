@@ -73,11 +73,11 @@ async function executeAction(action) {
     throw new Error(`Element not found for selector: ${selector}`);
   }
   
-  // Scroll element into view to ensure it's visible
-  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // // Scroll element into view to ensure it's visible
+  // element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   
-  // Wait a bit for scrolling to complete
-  await sleep(100);
+  // // Wait a bit for scrolling to complete
+  // await sleep(100);
   
   // Execute the action based on its type
   switch (type) {
@@ -90,7 +90,7 @@ async function executeAction(action) {
       break;
       
     case 'ckeditor':
-      await executeCKEditorAction(element, value);
+      await executeCKEditorAction(element, selector, value);
       break;
       
     default:
@@ -198,16 +198,17 @@ async function executeInputAction(element, value, inputType) {
  * @param {string} value - The HTML content to set in the editor
  * @returns {Promise} - Promise that resolves when the content is set
  */
-async function executeCKEditorAction(element, value) {
+async function executeCKEditorAction(element, selector, value) {
   // Highlight element briefly to show what's being edited
   highlightElement(element);
 
-    chrome.runtime.sendMessage({ 
-      action: 'executeInMainWorld',
-      tabId: chrome.runtime.id // or get the actual tab ID
+  chrome.runtime.sendMessage({ 
+    action: 'executeInMainWorld',
+    selector: selector,
+    value: value
   });
   // Small delay to allow CKEditor to process the change
-  await sleep(1000);
+  await sleep(100);
 }
 
 /**
