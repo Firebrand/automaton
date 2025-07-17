@@ -37,14 +37,14 @@ The extension expects JSON files with the following structure:
       "selector": "[id^=\"edit-label-0-value\"]",
       "timestamp": 1752716434723,
       "value": "Hello",
-      "inputType": "text"
+      "elementType": "text"
     },
     {
       "type": "click",
       "selector": "button.dropbutton__toggle",
       "timestamp": 1752716435842,
       "value": "",
-      "inputType": "button"
+      "elementType": "button"
     }
   ]
 }
@@ -56,7 +56,7 @@ The extension expects JSON files with the following structure:
 - `selector`: CSS selector for the target element
 - `timestamp`: Unix timestamp in milliseconds
 - `value`: Value to input (for input actions) or empty string (for clicks)
-- `inputType`: Type of input element (`text`, `button`, `submit`, etc.)
+- `elementType`: Type of element (`text`, `button`, `submit`, etc.)
 
 ## Files Structure
 

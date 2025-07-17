@@ -1,0 +1,21 @@
+{
+    "version": "1.0",
+    "created": "2025-07-17T21:40:59.105Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+    "actions": [
+      {
+        "elementType": "text",
+        "selector": "#edit-label-0-value",
+        "timestamp": 1752788450192,
+        "type": "click",
+        "value": ""
+      },
+      {
+        "elementType": "text",
+        "selector": "#edit-label-0-value",
+        "timestamp": 1752788454340,
+        "type": "input",
+        "value": "Awesome"
+      }
+    ]
+  }

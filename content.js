@@ -82,7 +82,7 @@ async function executePlaybook(playbook) {
  * @returns {Promise} - Promise that resolves when the action is completed
  */
 async function executeAction(action) {
-  const { type, selector, value, inputType } = action;
+  const { type, selector, value, elementType } = action;
   
   // Find the target element using the selector
   const element = document.querySelector(selector);
@@ -103,7 +103,7 @@ async function executeAction(action) {
       break;
       
     case 'input':
-      await executeInputAction(element, value, inputType);
+      await executeInputAction(element, value, elementType);
       break;
       
     case 'ckeditor':
@@ -166,10 +166,10 @@ async function executeClickAction(element, action) {
  * Executes an input action on an element
  * @param {Element} element - The DOM element to input text into
  * @param {string} value - The text value to input
- * @param {string} inputType - The type of input (text, etc.)
+ * @param {string} elementType - The type of element (text, etc.)
  * @returns {Promise} - Promise that resolves when input is completed
  */
-async function executeInputAction(element, value, inputType) {
+async function executeInputAction(element, value, elementType) {
   // Focus the element first
   element.focus();
   
@@ -318,28 +318,19 @@ function handleRecordedClick(event) {
   
   const element = event.target;
   const elementType = element.type?.toLowerCase() || '';
-  const validTypes = ['text', 'textarea', 'button', 'checkbox', 'submit'];
+
+  const validTypes = ['button', 'submit'];
   
-  // Only proceed if element has no type (like a button) or has a valid type
-  if (elementType && !validTypes.includes(elementType)) {
+  // Only proceed if the element has a defined type that's in our valid types list
+  if (!elementType || !validTypes.includes(elementType)) {
     return;
   }
   
   const selector = generateSelector(element);
   if (!selector) return;
   
-  // Determine input type based on element
-  let inputType = 'button';
-  if (elementType === 'submit' || element.getAttribute('type') === 'submit') {
-    inputType = 'submit';
-  } else if (element.tagName === 'BUTTON') {
-    inputType = 'button';
-  } else if (element.tagName === 'A') {
-    inputType = 'link';
-  }
-  
   const action = {
-    inputType: inputType,
+    elementType,
     selector: selector,
     timestamp: Date.now(),
     type: 'click',
@@ -365,6 +356,7 @@ function handleRecordedInput(event) {
   if (!isRecording) return;
   
   const element = event.target;
+
   const selector = generateSelector(element);
   
   if (!selector) return;
@@ -378,7 +370,7 @@ function handleRecordedInput(event) {
   clearTimeout(element._inputTimeout);
   element._inputTimeout = setTimeout(() => {
     const action = {
-      inputType: element.type || 'text',
+      elementType: element.type || 'text',
       selector: selector,
       timestamp: Date.now(),
       type: 'input',
@@ -411,13 +403,14 @@ function handleRecordedChange(event) {
   
   const element = event.target;
   
+  
   // Handle select elements
   if (element.tagName === 'SELECT') {
     const selector = generateSelector(element);
     if (!selector) return;
     
     const action = {
-      inputType: 'select',
+      elementType: 'select',
       selector: selector,
       timestamp: Date.now(),
       type: 'input',
@@ -501,7 +494,7 @@ function handleCKEditorInput(event) {
   clearTimeout(element._ckEditorTimeout);
   element._ckEditorTimeout = setTimeout(() => {
     const action = {
-      inputType: 'ckeditor',
+      elementType: 'ckeditor',
       selector: selector,
       timestamp: Date.now(),
       type: 'ckeditor',
