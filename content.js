@@ -270,10 +270,13 @@ function startRecording() {
   recordedActions = [];
   recordingStartTime = Date.now();
   
-  console.log('Recording started');
+  console.log('Recording started, isRecording:', isRecording);
   
   // Add event listeners for different types of interactions
-  document.addEventListener('click', handleRecordedClick, true);
+  // Use both capture and bubble phases to catch events
+  document.addEventListener('click', handleRecordedClick, true); // Capture phase
+  document.addEventListener('click', handleRecordedClickBubble, false); // Bubble phase
+  document.addEventListener('mousedown', handleRecordedMouseDown, true); // Alternative event
   document.addEventListener('input', handleRecordedInput, true);
   document.addEventListener('change', handleRecordedChange, true);
   
@@ -296,6 +299,8 @@ function stopRecording() {
   
   // Remove event listeners
   document.removeEventListener('click', handleRecordedClick, true);
+  document.removeEventListener('click', handleRecordedClickBubble, false);
+  document.removeEventListener('mousedown', handleRecordedMouseDown, true);
   document.removeEventListener('input', handleRecordedInput, true);
   document.removeEventListener('change', handleRecordedChange, true);
   
@@ -314,15 +319,30 @@ function stopRecording() {
  * @param {Event} event - The click event
  */
 function handleRecordedClick(event) {
-  if (!isRecording) return;
+  console.log('handleRecordedClick called, isRecording:', isRecording);
+  if (!isRecording) {
+    console.log('Not recording, returning early');
+    return;
+  }
   
   const element = event.target;
   const elementType = element.type?.toLowerCase() || '';
 
   const validTypes = ['button', 'submit'];
   
+  // Debug logging
+  console.log('Click detected:', {
+    tagName: element.tagName,
+    type: element.type,
+    elementType: elementType,
+    id: element.id,
+    className: element.className,
+    value: element.value
+  });
+  
   // Only proceed if the element has a defined type that's in our valid types list
   if (!elementType || !validTypes.includes(elementType)) {
+    console.log('Skipping click - invalid type:', elementType);
     return;
   }
   
@@ -346,6 +366,79 @@ function handleRecordedClick(event) {
   });
   
   console.log('Recorded click:', action);
+}
+
+/**
+ * Handles recorded click events in bubble phase
+ * @param {Event} event - The click event
+ */
+function handleRecordedClickBubble(event) {
+  console.log('handleRecordedClickBubble called, isRecording:', isRecording);
+  if (!isRecording) {
+    console.log('Not recording, returning early (bubble)');
+    return;
+  }
+  
+  const element = event.target;
+  console.log('Bubble phase click detected:', {
+    tagName: element.tagName,
+    type: element.type,
+    id: element.id,
+    className: element.className,
+    value: element.value
+  });
+}
+
+/**
+ * Handles recorded mousedown events
+ * @param {Event} event - The mousedown event
+ */
+function handleRecordedMouseDown(event) {
+  console.log('handleRecordedMouseDown called, isRecording:', isRecording);
+  if (!isRecording) {
+    console.log('Not recording, returning early (mousedown)');
+    return;
+  }
+  
+  const element = event.target;
+  const elementType = element.type?.toLowerCase() || '';
+  const validTypes = ['button', 'submit'];
+  
+  console.log('Mousedown detected:', {
+    tagName: element.tagName,
+    type: element.type,
+    elementType: elementType,
+    id: element.id,
+    className: element.className,
+    value: element.value
+  });
+  
+  // Only proceed if the element has a defined type that's in our valid types list
+  if (!elementType || !validTypes.includes(elementType)) {
+    console.log('Skipping mousedown - invalid type:', elementType);
+    return;
+  }
+  
+  const selector = generateSelector(element);
+  if (!selector) return;
+  
+  const action = {
+    elementType,
+    selector: selector,
+    timestamp: Date.now(),
+    type: 'click',
+    value: element.textContent?.trim() || element.value || ''
+  };
+  
+  recordedActions.push(action);
+  
+  // Send action to background script for persistent storage
+  chrome.runtime.sendMessage({
+    action: 'recordAction',
+    actionData: action
+  });
+  
+  console.log('Recorded mousedown as click:', action);
 }
 
 /**
