@@ -273,7 +273,6 @@ function startRecording() {
   console.log('Recording started, isRecording:', isRecording);
   
   // Add event listeners for different types of interactions
-  document.addEventListener('click', handleRecordedClick, true); // Capture phase
   document.addEventListener('mousedown', handleRecordedMouseDown, true); // For elements where click is prevented
   document.addEventListener('input', handleRecordedInput, true);
   document.addEventListener('change', handleRecordedChange, true);
@@ -296,7 +295,6 @@ function stopRecording() {
   console.log('Recording stopped. Captured', recordedActions.length, 'actions');
   
   // Remove event listeners
-  //document.removeEventListener('click', handleRecordedClick, true);
   document.removeEventListener('mousedown', handleRecordedMouseDown, true);
   document.removeEventListener('input', handleRecordedInput, true);
   document.removeEventListener('change', handleRecordedChange, true);
@@ -311,59 +309,6 @@ function stopRecording() {
   return actions;
 }
 
-/**
- * Handles recorded click events
- * @param {Event} event - The click event
- */
-function handleRecordedClick(event) {
-  console.log('handleRecordedClick called, isRecording:', isRecording);
-  if (!isRecording) {
-    console.log('Not recording, returning early');
-    return;
-  }
-  
-  const element = event.target;
-  const elementType = element.type?.toLowerCase() || '';
-
-  const validTypes = ['button', 'submit'];
-  
-  // Debug logging
-  console.log('Click detected:', {
-    tagName: element.tagName,
-    type: element.type,
-    elementType: elementType,
-    id: element.id,
-    className: element.className,
-    value: element.value
-  });
-  
-  // Only proceed if the element has a defined type that's in our valid types list
-  if (!elementType || !validTypes.includes(elementType)) {
-    console.log('Skipping click - invalid type:', elementType);
-    return;
-  }
-  
-  const selector = generateSelector(element);
-  if (!selector) return;
-  
-  const action = {
-    elementType,
-    selector: selector,
-    timestamp: Date.now(),
-    type: 'click',
-    value: element.textContent?.trim() || element.value || ''
-  };
-  
-  recordedActions.push(action);
-  
-  // Send action to background script for persistent storage
-  chrome.runtime.sendMessage({
-    action: 'recordAction',
-    actionData: action
-  });
-  
-  console.log('Recorded click:', action);
-}
 
 /**
  * Handles recorded mousedown events
@@ -383,7 +328,6 @@ function handleRecordedMouseDown(event) {
   console.log('Mousedown detected:', {
     tagName: element.tagName,
     type: element.type,
-    elementType: elementType,
     id: element.id,
     className: element.className,
     value: element.value
@@ -427,6 +371,14 @@ function handleRecordedInput(event) {
   const element = event.target;
 
   const selector = generateSelector(element);
+
+  console.log('Input detected:', {
+    tagName: element.tagName,
+    type: element.type,
+    id: element.id,
+    className: element.className,
+    value: element.value
+  });
   
   if (!selector) return;
   
@@ -471,6 +423,14 @@ function handleRecordedChange(event) {
   if (!isRecording) return;
   
   const element = event.target;
+
+  console.log('Change detected:', {
+    tagName: element.tagName,
+    type: element.type,
+    id: element.id,
+    className: element.className,
+    value: element.value
+  });
   
   
   // Handle select elements
@@ -503,23 +463,32 @@ function handleRecordedChange(event) {
  */
 let ckEditorObserver = null;
 function observeCKEditorChanges() {
+  console.log('🔍 Starting CKEditor observation...');
+  
   // Look for CKEditor instances
   const ckEditors = document.querySelectorAll('.ck-editor__editable');
+  console.log(`📝 Found ${ckEditors.length} existing CKEditor instances`);
   
-  ckEditors.forEach(editor => {
+  ckEditors.forEach((editor, index) => {
+    console.log(`📝 Adding input listener to CKEditor ${index + 1}:`, editor);
     // Add event listener for CKEditor content changes
     editor.addEventListener('input', handleCKEditorInput);
   });
   
   // Also observe for new CKEditor instances that might be added dynamically
+  console.log('👀 Setting up MutationObserver for dynamic CKEditor detection...');
   ckEditorObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           const newEditors = node.querySelectorAll('.ck-editor__editable');
-          newEditors.forEach(editor => {
-            editor.addEventListener('input', handleCKEditorInput);
-          });
+          if (newEditors.length > 0) {
+            console.log(`🆕 Detected ${newEditors.length} new CKEditor instances`);
+            newEditors.forEach((editor, index) => {
+              console.log(`📝 Adding input listener to new CKEditor ${index + 1}:`, editor);
+              editor.addEventListener('input', handleCKEditorInput);
+            });
+          }
         }
       });
     });
@@ -529,6 +498,8 @@ function observeCKEditorChanges() {
     childList: true,
     subtree: true
   });
+  
+  console.log('✅ CKEditor observation setup complete');
 }
 
 /**
