@@ -470,9 +470,28 @@ function observeCKEditorChanges() {
   console.log(`📝 Found ${ckEditors.length} existing CKEditor instances`);
   
   ckEditors.forEach((editor, index) => {
-    console.log(`📝 Adding input listener to CKEditor ${index + 1}:`, editor);
-    // Add event listener for CKEditor content changes
+    console.log(`📝 Adding multiple event listeners to CKEditor ${index + 1}:`, editor);
+    // Add multiple event listeners for CKEditor content changes
     editor.addEventListener('input', handleCKEditorInput);
+    editor.addEventListener('keyup', handleCKEditorInput);
+    editor.addEventListener('paste', handleCKEditorInput);
+    editor.addEventListener('blur', handleCKEditorInput);
+    editor.addEventListener('focus', (e) => console.log('🎯 CKEditor focused:', e.target));
+    
+    // Also use MutationObserver for this specific editor
+    const editorObserver = new MutationObserver((mutations) => {
+      console.log('🔄 CKEditor content mutation detected:', mutations.length, 'mutations');
+      handleCKEditorInput({ target: editor, type: 'mutation' });
+    });
+    
+    editorObserver.observe(editor, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+    
+    // Store observer reference for cleanup
+    editor._mutationObserver = editorObserver;
   });
   
   // Also observe for new CKEditor instances that might be added dynamically
@@ -485,8 +504,28 @@ function observeCKEditorChanges() {
           if (newEditors.length > 0) {
             console.log(`🆕 Detected ${newEditors.length} new CKEditor instances`);
             newEditors.forEach((editor, index) => {
-              console.log(`📝 Adding input listener to new CKEditor ${index + 1}:`, editor);
+              console.log(`📝 Adding multiple event listeners to new CKEditor ${index + 1}:`, editor);
+              // Add multiple event listeners for CKEditor content changes
               editor.addEventListener('input', handleCKEditorInput);
+              editor.addEventListener('keyup', handleCKEditorInput);
+              editor.addEventListener('paste', handleCKEditorInput);
+              editor.addEventListener('blur', handleCKEditorInput);
+              editor.addEventListener('focus', (e) => console.log('🎯 New CKEditor focused:', e.target));
+              
+              // Also use MutationObserver for this specific editor
+              const editorObserver = new MutationObserver((mutations) => {
+                console.log('🔄 New CKEditor content mutation detected:', mutations.length, 'mutations');
+                handleCKEditorInput({ target: editor, type: 'mutation' });
+              });
+              
+              editorObserver.observe(editor, {
+                childList: true,
+                subtree: true,
+                characterData: true
+              });
+              
+              // Store observer reference for cleanup
+              editor._mutationObserver = editorObserver;
             });
           }
         }
@@ -523,16 +562,36 @@ function stopCKEditorObservation() {
  * @param {Event} event - The input event from CKEditor
  */
 function handleCKEditorInput(event) {
-  if (!isRecording) return;
+  console.log(`🎯 CKEditor ${event.type || 'unknown'} event triggered!`, {
+    eventType: event.type,
+    isRecording: isRecording,
+    target: event.target,
+    targetClass: event.target.className,
+    targetId: event.target.id
+  });
+  
+  if (!isRecording) {
+    console.log('❌ Not recording, ignoring CKEditor input');
+    return;
+  }
   
   const element = event.target;
+  console.log('📝 Processing CKEditor element:', element);
+  
   const selector = generateSelector(element);
+  console.log('🎯 Generated selector for CKEditor:', selector);
   
-  if (!selector) return;
+  if (!selector) {
+    console.log('❌ No selector generated, aborting CKEditor recording');
+    return;
+  }
   
+  console.log('⏱️ Setting up CKEditor debounce timer...');
   // Debounce CKEditor events
   clearTimeout(element._ckEditorTimeout);
   element._ckEditorTimeout = setTimeout(() => {
+    console.log('🚀 CKEditor debounce timer fired, creating action...');
+    
     const action = {
       elementType: 'ckeditor',
       selector: selector,
@@ -541,12 +600,21 @@ function handleCKEditorInput(event) {
       value: element.innerHTML || ''
     };
     
+    console.log('📋 CKEditor action created:', action);
+    
     // Remove any previous CKEditor action for the same element
+    const beforeLength = recordedActions.length;
     recordedActions = recordedActions.filter(a => 
       !(a.type === 'ckeditor' && a.selector === selector)
     );
+    const afterLength = recordedActions.length;
+    
+    if (beforeLength !== afterLength) {
+      console.log(`🗑️ Removed ${beforeLength - afterLength} previous CKEditor actions`);
+    }
     
     recordedActions.push(action);
+    console.log(`📚 Total recorded actions: ${recordedActions.length}`);
     
     // Send action to background script for persistent storage
     chrome.runtime.sendMessage({
@@ -554,7 +622,7 @@ function handleCKEditorInput(event) {
       actionData: action
     });
     
-    console.log('Recorded CKEditor input:', action);
+    console.log('✅ Recorded CKEditor input:', action);
   }, 1000); // 1s debounce for CKEditor
 }
 
