@@ -273,10 +273,8 @@ function startRecording() {
   console.log('Recording started, isRecording:', isRecording);
   
   // Add event listeners for different types of interactions
-  // Use both capture and bubble phases to catch events
   document.addEventListener('click', handleRecordedClick, true); // Capture phase
-  document.addEventListener('click', handleRecordedClickBubble, false); // Bubble phase
-  document.addEventListener('mousedown', handleRecordedMouseDown, true); // Alternative event
+  document.addEventListener('mousedown', handleRecordedMouseDown, true); // For elements where click is prevented
   document.addEventListener('input', handleRecordedInput, true);
   document.addEventListener('change', handleRecordedChange, true);
   
@@ -298,8 +296,7 @@ function stopRecording() {
   console.log('Recording stopped. Captured', recordedActions.length, 'actions');
   
   // Remove event listeners
-  document.removeEventListener('click', handleRecordedClick, true);
-  document.removeEventListener('click', handleRecordedClickBubble, false);
+  //document.removeEventListener('click', handleRecordedClick, true);
   document.removeEventListener('mousedown', handleRecordedMouseDown, true);
   document.removeEventListener('input', handleRecordedInput, true);
   document.removeEventListener('change', handleRecordedChange, true);
@@ -366,27 +363,6 @@ function handleRecordedClick(event) {
   });
   
   console.log('Recorded click:', action);
-}
-
-/**
- * Handles recorded click events in bubble phase
- * @param {Event} event - The click event
- */
-function handleRecordedClickBubble(event) {
-  console.log('handleRecordedClickBubble called, isRecording:', isRecording);
-  if (!isRecording) {
-    console.log('Not recording, returning early (bubble)');
-    return;
-  }
-  
-  const element = event.target;
-  console.log('Bubble phase click detected:', {
-    tagName: element.tagName,
-    type: element.type,
-    id: element.id,
-    className: element.className,
-    value: element.value
-  });
 }
 
 /**
