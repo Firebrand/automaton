@@ -470,28 +470,9 @@ function observeCKEditorChanges() {
   console.log(`📝 Found ${ckEditors.length} existing CKEditor instances`);
   
   ckEditors.forEach((editor, index) => {
-    console.log(`📝 Adding multiple event listeners to CKEditor ${index + 1}:`, editor);
-    // Add multiple event listeners for CKEditor content changes
-    editor.addEventListener('input', handleCKEditorInput);
-    editor.addEventListener('keyup', handleCKEditorInput);
-    editor.addEventListener('paste', handleCKEditorInput);
+    console.log(`📝 Adding blur listener to CKEditor ${index + 1}:`, editor);
+    // Add blur event listener for CKEditor content changes
     editor.addEventListener('blur', handleCKEditorInput);
-    editor.addEventListener('focus', (e) => console.log('🎯 CKEditor focused:', e.target));
-    
-    // Also use MutationObserver for this specific editor
-    const editorObserver = new MutationObserver((mutations) => {
-      console.log('🔄 CKEditor content mutation detected:', mutations.length, 'mutations');
-      handleCKEditorInput({ target: editor, type: 'mutation' });
-    });
-    
-    editorObserver.observe(editor, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
-    
-    // Store observer reference for cleanup
-    editor._mutationObserver = editorObserver;
   });
   
   // Also observe for new CKEditor instances that might be added dynamically
@@ -504,28 +485,9 @@ function observeCKEditorChanges() {
           if (newEditors.length > 0) {
             console.log(`🆕 Detected ${newEditors.length} new CKEditor instances`);
             newEditors.forEach((editor, index) => {
-              console.log(`📝 Adding multiple event listeners to new CKEditor ${index + 1}:`, editor);
-              // Add multiple event listeners for CKEditor content changes
-              editor.addEventListener('input', handleCKEditorInput);
-              editor.addEventListener('keyup', handleCKEditorInput);
-              editor.addEventListener('paste', handleCKEditorInput);
+              console.log(`📝 Adding blur listener to new CKEditor ${index + 1}:`, editor);
+              // Add blur event listener for CKEditor content changes
               editor.addEventListener('blur', handleCKEditorInput);
-              editor.addEventListener('focus', (e) => console.log('🎯 New CKEditor focused:', e.target));
-              
-              // Also use MutationObserver for this specific editor
-              const editorObserver = new MutationObserver((mutations) => {
-                console.log('🔄 New CKEditor content mutation detected:', mutations.length, 'mutations');
-                handleCKEditorInput({ target: editor, type: 'mutation' });
-              });
-              
-              editorObserver.observe(editor, {
-                childList: true,
-                subtree: true,
-                characterData: true
-              });
-              
-              // Store observer reference for cleanup
-              editor._mutationObserver = editorObserver;
             });
           }
         }
